@@ -2,7 +2,8 @@ import "./style.css";
 import { StudioScene } from "./studio/scene";
 import { Director, loadJob } from "./studio/director";
 import type { GameMaker } from "./studio/director";
-import { BuiltinBrain, type Brain } from "./brain/brain";
+import { BuiltinBrain } from "./brain/brain";
+import { AiBrain, fetchStatus, type StudioStatus } from "./brain/aiBrain";
 import { PITCH_IDEAS } from "./brain/pitch";
 import { createMaker } from "./games/maker";
 import { remix } from "./games/remix";
@@ -28,12 +29,33 @@ scene.onAgentClick = (id) => showAgentCard(id);
 const diary = new DiaryView($("#diary"));
 
 const maker: GameMaker = createMaker();
-const builtin: Brain = new BuiltinBrain(remix);
+const builtin = new BuiltinBrain(remix);
+let status: StudioStatus | null = null;
+const aiBrain = new AiBrain(builtin, (usage) => {
+  if (status) {
+    status.usage = usage;
+    renderBadge();
+  }
+});
+
+function renderBadge(): void {
+  const b = $("#mode-badge");
+  if (status?.ai) {
+    const left = Math.max(0, status.usage.cap - status.usage.calls);
+    b.textContent = left > 0 ? `AI team · ${left} calls left today` : "AI budget spent · template mode";
+    b.className = left > 0 ? "badge is-ai" : "badge is-builtin";
+    b.title = `Coder: ${status.models.coder}. Chatter: ${status.models.chatter}. Daily cap ${status.usage.cap} calls (${status.usage.coderCap} coding calls).`;
+  } else {
+    b.textContent = "Template mode";
+    b.className = "badge is-builtin";
+    b.title = "No AI server connected: the crew writes and remixes from the built-in template cabinet.";
+  }
+}
 
 const director = new Director({
   scene,
   diary,
-  brain: () => builtin,
+  brain: () => (status?.ai ? aiBrain : builtin),
   builtin,
   maker,
   onStage: (stage, done, retry) => renderStages(stage, done, retry),
@@ -113,10 +135,14 @@ $("#pitch-form").addEventListener("submit", (e) => {
 });
 
 const pending = loadJob();
-if (pending) {
-  setBusy(true);
-  void director.run(pending);
-}
+void fetchStatus().then((s) => {
+  status = s;
+  renderBadge();
+  if (pending) {
+    setBusy(true);
+    void director.run(pending);
+  }
+});
 
 // Small hook for the automated browser tests (tests/e2e).
 import { runPlaytest } from "./games/playtest";
