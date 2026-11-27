@@ -798,10 +798,15 @@ export class StudioScene {
   private drawChair(id: AgentId): void {
     const s = seatOf(id);
     const ctx = this.ctx;
-    ctx.fillStyle = "#3a3446";
-    ctx.fillRect(s.x - 6, s.y - 14, 12, 14);
-    ctx.fillStyle = "#4a4258";
-    ctx.fillRect(s.x - 5, s.y - 13, 10, 2);
+    // office chair: rounded back on a post, in the agent's colour
+    const col = AGENTS[id].color;
+    ctx.fillStyle = "#2b2033";
+    ctx.fillRect(s.x - 1, s.y - 4, 2, 4);
+    ctx.fillStyle = col;
+    ctx.fillRect(s.x - 5, s.y - 13, 10, 9);
+    ctx.fillRect(s.x - 4, s.y - 14, 8, 1);
+    ctx.fillStyle = "rgba(0,0,0,0.25)";
+    ctx.fillRect(s.x - 5, s.y - 6, 10, 2);
   }
 
   private drawDesk(id: AgentId): void {
