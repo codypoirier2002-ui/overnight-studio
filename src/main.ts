@@ -2,17 +2,19 @@ import "./style.css";
 import { StudioScene } from "./studio/scene";
 import { Director, loadJob } from "./studio/director";
 import type { GameMaker } from "./studio/director";
-import { BuiltinBrain, type Brain, type GameBuild } from "./brain/brain";
-import { GENRE_CONTROLS, PITCH_IDEAS } from "./brain/pitch";
+import { BuiltinBrain, type Brain } from "./brain/brain";
+import { PITCH_IDEAS } from "./brain/pitch";
+import { createMaker } from "./games/maker";
+import { remix } from "./games/remix";
+import { Player } from "./ui/player";
 import { renderStages } from "./ui/stagesView";
 import { renderShelf } from "./ui/shelfView";
 import { showAgentCard } from "./ui/agentCard";
 import { DiaryView } from "./ui/diaryView";
-import { loadShelf, onShelfChange, getShelf, addGame } from "./shelfStore";
+import { loadShelf, onShelfChange, getShelf, addGame, getGame, removeGame } from "./shelfStore";
 import { loadLore, getLore } from "./lore";
 import { readJSON, writeJSON } from "./storage";
 import { $, toast } from "./ui/dom";
-import type { PlaytestReport } from "./types";
 
 interface Settings {
   speed: number;
@@ -25,20 +27,8 @@ const scene = new StudioScene($("#scene") as HTMLCanvasElement);
 scene.onAgentClick = (id) => showAgentCard(id);
 const diary = new DiaryView($("#diary"));
 
-// Step 2 placeholder maker: templates and the real playtest arrive in step 3.
-const maker: GameMaker = {
-  fallback: (info): GameBuild => ({ kind: "template", templateId: info.genre, params: {}, controls: GENRE_CONTROLS[info.genre] }),
-  playtest: async (): Promise<PlaytestReport> => ({
-    pass: true,
-    checks: [{ name: "Boots", ok: true, detail: "placeholder" }],
-    errors: [],
-    frames: 600,
-    msPerFrame: 0.4,
-    survivedSeconds: 10,
-    score: 0,
-  }),
-};
-const builtin: Brain = new BuiltinBrain((info) => maker.fallback(info, undefined));
+const maker: GameMaker = createMaker();
+const builtin: Brain = new BuiltinBrain(remix);
 
 const director = new Director({
   scene,
@@ -54,9 +44,26 @@ const director = new Director({
 });
 director.speed = settings.speed;
 
+const player = new Player({
+  onDelete: (g) => {
+    removeGame(g.id);
+    toast(`"${g.title}" was taken off the shelf.`);
+  },
+  onShare: () => toast("Share links arrive in step 6."),
+  onSaveShared: (g) => {
+    addGame({ ...g, shared: true });
+    toast("Added to your shelf.");
+  },
+  sound: () => settings.sound,
+  onOpenChange: (open) => scene.setPaused(open),
+});
+
 function refreshShelf(): void {
   const games = getShelf();
-  renderShelf(games, (id) => console.info("open", id));
+  renderShelf(games, (id) => {
+    const g = getGame(id);
+    if (g) player.open(g);
+  });
   scene.shelf = games.map((g) => g.palette.hero);
   scene.plant = 1 + getLore().gerald;
 }
@@ -110,3 +117,11 @@ if (pending) {
   setBusy(true);
   void director.run(pending);
 }
+
+// Small hook for the automated browser tests (tests/e2e).
+import { runPlaytest } from "./games/playtest";
+import { parsePitch } from "./brain/pitch";
+import { pickPalette } from "./games/palettes";
+import { rngFrom } from "./brain/writer";
+import { buildGameHtml } from "./games/frame";
+(window as unknown as Record<string, unknown>).__OGS_TEST__ = { runPlaytest, parsePitch, remix, pickPalette, rngFrom, buildGameHtml };
