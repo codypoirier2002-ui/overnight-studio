@@ -32,6 +32,7 @@ export async function startServer(cmd, args, url, env = {}) {
 
 export async function openPage(browser, url, opts = {}) {
   const context = await browser.newContext(opts.device ? { ...devices[opts.device] } : { viewport: { width: 1280, height: 860 }, deviceScaleFactor: 1 });
+  if (!opts.title) await context.addInitScript(() => { try { sessionStorage.setItem("ogs.entered", "1"); } catch {} });
   if (opts.init) await context.addInitScript(opts.init);
   const page = await context.newPage();
   const errors = [];

@@ -92,7 +92,7 @@ function paletteCard(p: Palette): HTMLElement {
     { class: "card swatches" },
     ...PALETTE_KEYS.map((k, i) => {
       const sw = h("i");
-      sw.style.background = p[k];
+      if (/^#[0-9a-f]{6}$/i.test(String(p[k]))) sw.style.background = p[k];
       return h("span", { class: "swatch", title: p[k] }, sw, p.names[i] ?? k);
     }),
   );

@@ -5,10 +5,11 @@
   "scripts": {
     "dev": "node server/server.mjs --dev",
     "build": "tsc --noEmit && vite build",
-    "start": "node server/server.mjs",
+    "start": "npm run build && node server/server.mjs",
     "preview": "vite preview",
     "test": "vitest run",
-    "e2e": "node tests/e2e/run.mjs"
+    "e2e": "node tests/e2e/run.mjs",
+    "serve": "node server/server.mjs"
   },
   "repository": {
     "type": "git",

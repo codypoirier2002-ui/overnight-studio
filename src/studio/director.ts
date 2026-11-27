@@ -257,6 +257,10 @@ export class Director {
   private finishStage(stage: StageId): void {
     const j = this.job!;
     if (!j.done.includes(stage)) j.done.push(stage);
+    if (stage === "ship") {
+      saveJob(null);
+      return;
+    }
     const idx = STAGES.findIndex((s) => s.id === stage);
     j.stage = idx + 1 < STAGES.length ? STAGES[idx + 1].id : "ship";
     saveJob(j);

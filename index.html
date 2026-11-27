@@ -6,9 +6,25 @@
     <meta name="theme-color" content="#1b1528" />
     <meta name="description" content="Type a one-line game pitch and a cosy night-shift studio of four AI agents makes a small playable browser game from it." />
     <title>Overnight Game Studio</title>
+    <link rel="manifest" href="./manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="./icon-180.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' shape-rendering='crispEdges'%3E%3Crect width='16' height='16' fill='%231b1528'/%3E%3Crect x='3' y='3' width='10' height='8' fill='%237fd6c2'/%3E%3Crect x='4' y='4' width='8' height='6' fill='%230f1f22'/%3E%3Crect x='5' y='5' width='3' height='1' fill='%23ffd56b'/%3E%3Crect x='5' y='7' width='5' height='1' fill='%23ff8fa3'/%3E%3Crect x='6' y='12' width='4' height='2' fill='%237fd6c2'/%3E%3C/svg%3E" />
   </head>
   <body>
+    <div id="title-screen" class="title-screen" role="dialog" aria-modal="true" aria-labelledby="title-logo" hidden>
+      <canvas id="title-sky" width="320" height="180" aria-hidden="true"></canvas>
+      <div class="title-inner">
+        <p class="title-kicker">A night-shift game studio</p>
+        <h1 id="title-logo" class="title-logo">Overnight<br />Game Studio</h1>
+        <p class="title-sub">Pitch a game at dusk. Four tired, brilliant colleagues ship it by dawn.</p>
+        <div class="title-actions">
+          <button id="title-enter" class="btn btn-primary" type="button">Enter the studio</button>
+        </div>
+        <p id="title-meta" class="title-meta"></p>
+      </div>
+    </div>
     <div id="app" class="app">
       <header class="topbar">
         <h1 class="brand"><span class="brand-moon" aria-hidden="true"></span>Overnight Game Studio</h1>
@@ -54,8 +70,11 @@
 
       <section class="shelf-panel" aria-label="Arcade shelf">
         <div class="panel-head">
-          <h2>Arcade shelf</h2>
-          <span id="shelf-count" class="muted"></span>
+          <h2>Arcade shelf <span id="shelf-count" class="muted shelf-count"></span></h2>
+          <div class="shelf-tools">
+            <button id="backup-btn" class="chip" type="button" title="Download your shelf as a file">Back up</button>
+            <label class="chip file-chip" title="Load games from a backup file">Restore<input id="restore-input" type="file" accept="application/json,.json" hidden /></label>
+          </div>
         </div>
         <div id="shelf" class="shelf"></div>
       </section>

@@ -21,6 +21,10 @@ import { loadShelf, onShelfChange, getShelf, addGame, getGame, removeGame } from
 import { loadLore, getLore } from "./lore";
 import { readJSON, writeJSON } from "./storage";
 import { $, toast } from "./ui/dom";
+import { showTitle, titleAlreadySeen } from "./ui/titleScreen";
+import { decodeGame, encodeGame, readShareToken, shareUrl } from "./share";
+import { exportBackup, importBackup } from "./backup";
+import type { ShippedGame } from "./types";
 
 interface Settings {
   speed: number;
@@ -85,13 +89,16 @@ const player = new Player({
     removeGame(g.id);
     toast(`"${g.title}" was taken off the shelf.`);
   },
-  onShare: () => toast("Share links arrive in step 6."),
+  onShare: (g) => void shareGame(g),
   onSaveShared: (g) => {
     addGame({ ...g, shared: true });
     toast("Added to your shelf.");
   },
   sound: () => settings.sound,
-  onOpenChange: (open) => scene.setPaused(open),
+  onOpenChange: (open) => {
+    scene.setPaused(open);
+    if (!open && readShareToken()) history.replaceState(null, "", location.pathname + location.search);
+  },
 });
 
 function refreshShelf(): void {
@@ -168,15 +175,97 @@ $("#pitch-form").addEventListener("submit", (e) => {
   });
 });
 
-const pending = loadJob();
-void fetchStatus().then((s) => {
-  status = s;
-  renderBadge();
-  if (pending) {
-    setBusy(true);
-    void director.run(pending);
+async function shareGame(g: ShippedGame): Promise<void> {
+  const url = shareUrl(await encodeGame(g));
+  if (url.length > 60000) {
+    toast("This game is too big to fit in a link. Use Back up instead.");
+    return;
+  }
+  const local = /^(localhost|127\.|\[::1\])/.test(location.hostname);
+  const coarse = window.matchMedia?.("(pointer: coarse)").matches;
+  try {
+    if (coarse && navigator.share) {
+      await navigator.share({ title: g.title, text: `${g.title}: ${g.tagline}`, url });
+      return;
+    }
+    await navigator.clipboard.writeText(url);
+    toast(local ? "Link copied. It points at this computer: share from the GitHub Pages site so others can open it." : "Share link copied. The whole game is inside the link.", 4200);
+  } catch (e) {
+    if ((e as Error)?.name === "AbortError") return;
+    window.prompt("Copy this link to share the game:", url);
+  }
+}
+
+async function openShared(): Promise<boolean> {
+  const token = readShareToken();
+  if (!token) return false;
+  const game = await decodeGame(token);
+  if (!game) {
+    toast("That share link looks broken or incomplete.");
+    history.replaceState(null, "", location.pathname + location.search);
+    return false;
+  }
+  const mine = getGame(game.id);
+  player.open(mine ?? game, { shared: !mine });
+  toast(mine ? "That one's already on your shelf." : "Someone shared a game from their night shift with you!", 3800);
+  return true;
+}
+
+$("#backup-btn").addEventListener("click", () => {
+  if (!getShelf().length) {
+    toast("Nothing on the shelf to back up yet.");
+    return;
+  }
+  exportBackup();
+});
+$("#restore-input").addEventListener("change", async (e) => {
+  const input = e.target as HTMLInputElement;
+  const file = input.files?.[0];
+  input.value = "";
+  if (!file) return;
+  try {
+    const { added, skipped } = await importBackup(file);
+    loadLore();
+    refreshShelf();
+    toast(`Restored ${added} game${added === 1 ? "" : "s"}${skipped ? ` (${skipped} already here or unreadable)` : ""}.`);
+  } catch (err) {
+    toast((err as Error).message || "Couldn't read that backup.");
   }
 });
+window.addEventListener("hashchange", () => void openShared());
+
+const pending = loadJob();
+const statusReady = fetchStatus().then((s) => {
+  status = s;
+  renderBadge();
+});
+
+function resumeIfPending(): void {
+  if (!pending || director.running) return;
+  void statusReady.then(() => {
+    setBusy(true);
+    toast("The crew picks up where they left off.");
+    void director.run(pending);
+  });
+}
+
+void (async () => {
+  if (await openShared()) return;
+  if (titleAlreadySeen()) {
+    resumeIfPending();
+    return;
+  }
+  const n = getShelf().length;
+  const meta = pending
+    ? `The crew is mid-shift on "${pending.pitch}". They'll pick up where they left off.`
+    : n
+      ? `${n} game${n === 1 ? "" : "s"} on the shelf. The kettle's on.`
+      : "The shelf is empty. The kettle's on.";
+  showTitle({ meta, onEnter: () => {
+    sound.play("pop");
+    resumeIfPending();
+  } });
+})();
 
 // Small hook for the automated browser tests (tests/e2e).
 (window as unknown as Record<string, unknown>).__OGS_TEST__ = { runPlaytest, parsePitch, remix, pickPalette, rngFrom, buildGameHtml, scene, life };

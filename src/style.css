@@ -720,3 +720,151 @@ h3 {
     scroll-behavior: auto !important;
   }
 }
+
+/* ---------- title screen ---------- */
+.title-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: grid;
+  place-items: center;
+  background: #0b1030;
+  overflow: hidden;
+}
+.title-screen[hidden] {
+  display: none;
+}
+#title-sky {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  image-rendering: pixelated;
+  object-fit: cover;
+}
+.title-inner {
+  position: relative;
+  text-align: center;
+  padding: 24px 16px;
+  max-width: 560px;
+}
+.title-kicker {
+  font-family: var(--pixel);
+  color: var(--teal);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-size: 0.9rem;
+  margin: 0 0 10px;
+}
+.title-logo {
+  font-size: clamp(2.4rem, 9vw, 4.4rem);
+  line-height: 0.95;
+  color: var(--accent);
+  text-shadow: 4px 4px 0 #2b2033, 0 0 0 #000;
+  margin: 0;
+}
+.title-sub {
+  color: var(--ink);
+  font-size: 1.05rem;
+  margin: 16px auto 22px;
+  max-width: 30ch;
+  text-shadow: 2px 2px 0 #0b1030;
+}
+.title-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+.title-actions .btn {
+  font-size: 1.15rem;
+  padding: 10px 22px;
+}
+.title-meta {
+  margin: 16px 0 0;
+  color: var(--ink-soft);
+  font-size: 0.9rem;
+  text-shadow: 2px 2px 0 #0b1030;
+}
+.shelf-count {
+  font-family: var(--body);
+  font-size: 0.85rem;
+  font-weight: 400;
+  margin-left: 6px;
+}
+.shelf-tools {
+  display: flex;
+  gap: 6px;
+}
+.file-chip {
+  display: inline-flex;
+  align-items: center;
+}
+.file-chip:focus-within {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* ---------- player on phones: full screen, the game takes the remaining height ---------- */
+@media (max-width: 640px), (max-height: 560px) {
+  .player {
+    width: 100vw;
+    max-width: 100vw;
+    height: 100dvh;
+    max-height: 100dvh;
+    margin: 0;
+    border: 0;
+    border-radius: 0;
+  }
+  .player-inner {
+    height: 100dvh;
+    max-height: 100dvh;
+    padding-top: env(safe-area-inset-top);
+  }
+  .player-head {
+    padding: 8px 12px 4px;
+  }
+  .player-head h2 {
+    font-size: 1.1rem;
+  }
+  .player-head p {
+    font-size: 0.8rem;
+    display: -webkit-box;
+    -webkit-line-clamp: 1;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .player-body {
+    display: flex;
+    flex-direction: column;
+    padding: 8px;
+  }
+  .tab-pane.is-active[data-pane="play"] {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+  }
+  .frame-host,
+  .frame-host[style] {
+    aspect-ratio: auto;
+    flex: 1;
+    min-height: 260px;
+    max-height: none;
+  }
+  .controls-hint {
+    display: none;
+  }
+  .player-foot {
+    padding: 8px 12px calc(8px + env(safe-area-inset-bottom));
+    gap: 6px;
+  }
+  .player-foot .btn {
+    min-height: 40px;
+    padding: 6px 12px;
+    font-size: 0.9rem;
+  }
+  .player-foot .spacer {
+    display: none;
+  }
+}

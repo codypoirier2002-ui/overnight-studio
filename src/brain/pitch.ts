@@ -328,7 +328,11 @@ export function article(word: string): string {
   return /^[aeiou]/i.test(word) && !/^(uni|use|eu|one)/i.test(word) ? "an" : "a";
 }
 
+// Stuff you don't count: "catch the honey", not "catch the honeys".
+const MASS = new Set(["honey", "water", "milk", "tea", "coffee", "soup", "cheese", "money", "gold", "energy", "power", "love", "music", "treasure", "laundry", "stardust", "candy", "rice", "sand", "snow", "lava", "fog", "dust", "traffic", "rubble", "ramen", "sushi", "popcorn", "jam", "toast", "bread", "mail"]);
+
 export function plural(word: string): string {
+  if (MASS.has(word) || MASS.has(word.split(" ").pop() ?? "")) return word;
   if (/(s|sh|ch|x|z)$/.test(word)) return word + "es";
   if (/[^aeiou]y$/.test(word)) return word.slice(0, -1) + "ies";
   if (word === "mouse") return "mice";
