@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#1b1528" />
+    <meta name="description" content="Type a one-line game pitch and a cosy night-shift studio of four AI agents makes a small playable browser game from it." />
+    <title>Overnight Game Studio</title>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' shape-rendering='crispEdges'%3E%3Crect width='16' height='16' fill='%231b1528'/%3E%3Crect x='3' y='3' width='10' height='8' fill='%237fd6c2'/%3E%3Crect x='4' y='4' width='8' height='6' fill='%230f1f22'/%3E%3Crect x='5' y='5' width='3' height='1' fill='%23ffd56b'/%3E%3Crect x='5' y='7' width='5' height='1' fill='%23ff8fa3'/%3E%3Crect x='6' y='12' width='4' height='2' fill='%237fd6c2'/%3E%3C/svg%3E" />
+  </head>
+  <body>
+    <div id="app" class="app">
+      <header class="topbar">
+        <h1 class="brand"><span class="brand-moon" aria-hidden="true"></span>Overnight Game Studio</h1>
+        <div class="topbar-tools">
+          <span id="mode-badge" class="badge" title="Which brain the studio is using">Checking studio...</span>
+          <button id="speed-btn" class="chip" type="button" title="Diary speed">1x</button>
+          <button id="sound-btn" class="chip" type="button" aria-pressed="true" title="Sound on/off">Sound on</button>
+        </div>
+      </header>
+
+      <main class="layout">
+        <section class="studio-panel" aria-label="The studio">
+          <div class="scene-wrap">
+            <canvas id="scene" width="320" height="180" aria-label="A cosy pixel-art office at night with four desks"></canvas>
+            <div id="agent-card" class="agent-card" hidden></div>
+          </div>
+
+          <form id="pitch-form" class="pitch" autocomplete="off">
+            <label for="pitch-input" class="pitch-label">Tonight's pitch</label>
+            <div class="pitch-row">
+              <input id="pitch-input" name="pitch" maxlength="120" required placeholder="a pigeon delivering pizza in a storm" />
+              <button id="dice-btn" class="icon-btn" type="button" title="Random pitch" aria-label="Random pitch">
+                <svg viewBox="0 0 16 16" width="18" height="18" aria-hidden="true" shape-rendering="crispEdges"><rect x="2" y="2" width="12" height="12" fill="currentColor"/><rect x="4" y="4" width="2" height="2" fill="#1b1528"/><rect x="10" y="4" width="2" height="2" fill="#1b1528"/><rect x="7" y="7" width="2" height="2" fill="#1b1528"/><rect x="4" y="10" width="2" height="2" fill="#1b1528"/><rect x="10" y="10" width="2" height="2" fill="#1b1528"/></svg>
+              </button>
+              <button id="pitch-btn" class="btn btn-primary" type="submit">Pitch it</button>
+            </div>
+            <p id="pitch-hint" class="pitch-hint">One line. The team works through the night and ships by dawn.</p>
+          </form>
+
+          <ol id="stages" class="stages" aria-label="Production stages"></ol>
+        </section>
+
+        <section class="diary-panel" aria-label="Dev diary">
+          <div class="panel-head">
+            <h2>Dev diary</h2>
+            <button id="skip-btn" class="chip" type="button" hidden>Fast-forward</button>
+          </div>
+          <div id="diary" class="diary" aria-live="polite">
+            <p class="diary-empty">The diary is quiet. The kettle's on. Pitch something.</p>
+          </div>
+        </section>
+      </main>
+
+      <section class="shelf-panel" aria-label="Arcade shelf">
+        <div class="panel-head">
+          <h2>Arcade shelf</h2>
+          <span id="shelf-count" class="muted"></span>
+        </div>
+        <div id="shelf" class="shelf"></div>
+      </section>
+
+      <footer class="footer">
+        <span>Everything here is invented: the studio, the crew and every game.</span>
+      </footer>
+    </div>
+
+    <dialog id="player" class="player">
+      <div class="player-inner">
+        <header class="player-head">
+          <div>
+            <h2 id="player-title">Game</h2>
+            <p id="player-tagline" class="muted"></p>
+          </div>
+          <button id="player-close" class="icon-btn" type="button" aria-label="Close">
+            <svg viewBox="0 0 16 16" width="18" height="18" aria-hidden="true" shape-rendering="crispEdges"><path d="M3 3h2v2H3zM5 5h2v2H5zM7 7h2v2H7zM9 9h2v2H9zM11 11h2v2h-2zM11 3h2v2h-2zM9 5h2v2H9zM5 9h2v2H5zM3 11h2v2H3z" fill="currentColor"/></svg>
+          </button>
+        </header>
+        <div class="player-tabs" role="tablist">
+          <button class="tab is-active" role="tab" data-tab="play" aria-selected="true">Play</button>
+          <button class="tab" role="tab" data-tab="diary" aria-selected="false">Dev diary</button>
+          <button class="tab" role="tab" data-tab="about" aria-selected="false">Design doc</button>
+        </div>
+        <div class="player-body">
+          <div class="tab-pane is-active" data-pane="play">
+            <div id="frame-host" class="frame-host"></div>
+            <p id="player-controls" class="muted controls-hint"></p>
+          </div>
+          <div class="tab-pane" data-pane="diary"><div id="player-diary" class="diary diary-archive"></div></div>
+          <div class="tab-pane" data-pane="about"><div id="player-doc" class="doc-view"></div></div>
+        </div>
+        <footer class="player-foot">
+          <button id="share-btn" class="btn" type="button">Copy share link</button>
+          <button id="save-shared-btn" class="btn btn-primary" type="button" hidden>Add to my shelf</button>
+          <span class="spacer"></span>
+          <button id="delete-btn" class="btn btn-danger" type="button">Remove from shelf</button>
+        </footer>
+      </div>
+    </dialog>
+
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
