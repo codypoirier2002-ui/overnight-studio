@@ -1,0 +1,37 @@
+{
+  "name": "overnight-game-studio",
+  "version": "1.0.0",
+  "description": "A cosy pixel-art studio where four AI agents turn a one-line pitch into a small browser game.",
+  "scripts": {
+    "dev": "node server/server.mjs --dev",
+    "build": "tsc --noEmit && vite build",
+    "start": "npm run build && node server/server.mjs",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "e2e": "node tests/e2e/run.mjs",
+    "serve": "node server/server.mjs"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/codypoirier2002-ui/overnight-studio.git"
+  },
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/codypoirier2002-ui/overnight-studio/issues"
+  },
+  "homepage": "https://github.com/codypoirier2002-ui/overnight-studio#readme",
+  "devDependencies": {
+    "typescript": "^7.0.2",
+    "vite": "^8.4.0",
+    "vitest": "^5.1.2"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^1.14.0",
+    "@fontsource/pixelify-sans": "^5.3.0"
+  },
+  "type": "module",
+  "private": true,
+  "engines": {
+    "node": ">=20.12"
+  }
+}
