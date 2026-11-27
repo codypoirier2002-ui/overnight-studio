@@ -309,7 +309,7 @@ export class StudioScene {
     const a = this.agents[id];
     if (a.activity === activity && (a.path.length || activity !== "desk" || a.seated)) return;
     a.activity = activity;
-    if (activity === "celebrate" || activity === "sleep") {
+    if (activity === "celebrate" || (activity === "sleep" && a.seated)) {
       a.path = [];
       return;
     }
@@ -320,7 +320,7 @@ export class StudioScene {
     }
     const from = path.length ? path[path.length - 1] : { x: a.x, y: a.y };
     let dest: Pt;
-    if (activity === "desk") {
+    if (activity === "desk" || activity === "sleep") {
       dest = standOf(id);
     } else {
       dest = SPOTS[activity][id];
@@ -330,7 +330,7 @@ export class StudioScene {
       path.push({ x: Math.max(96, Math.min(224, (from.x + dest.x) / 2)), y: 138 });
     }
     path.push(dest);
-    if (activity === "desk") path.push(seatOf(id));
+    if (activity === "desk" || activity === "sleep") path.push(seatOf(id));
     a.path = path;
   }
 
@@ -364,6 +364,20 @@ export class StudioScene {
 
   lightning(): void {
     this.flashUntil = this.t + 0.12;
+  }
+
+  private confettiParts: { x: number; y: number; vx: number; vy: number; c: string; life: number }[] = [];
+  confetti(colours: string[] = ["#ffd56b", "#ff9e7a", "#7fd6c2", "#a6e36b", "#ff8fc7", "#9fc3ff"]): void {
+    for (let i = 0; i < 80; i++) {
+      this.confettiParts.push({
+        x: 160 + (Math.random() - 0.5) * 30,
+        y: 118,
+        vx: (Math.random() - 0.5) * 140,
+        vy: -60 - Math.random() * 90,
+        c: colours[i % colours.length],
+        life: 2 + Math.random() * 1.5,
+      });
+    }
   }
 
   private glows: Partial<Record<AgentId, CanvasGradient>> = {};
@@ -422,7 +436,7 @@ export class StudioScene {
           a.x = target.x;
           a.y = target.y;
           a.path.shift();
-          if (!a.path.length && a.activity === "desk") {
+          if (!a.path.length && (a.activity === "desk" || a.activity === "sleep")) {
             a.seated = true;
           }
           if (!a.path.length && a.activity === "kettle") this.refillMug(id);
@@ -431,6 +445,15 @@ export class StudioScene {
           a.y += (dy / dist) * step;
         }
       }
+    }
+    for (let i = this.confettiParts.length - 1; i >= 0; i--) {
+      const p = this.confettiParts[i];
+      p.life -= dt;
+      p.vy += 140 * dt;
+      p.vx *= 1 - Math.min(1, dt * 0.8);
+      p.x += p.vx * dt;
+      p.y = Math.min(176, p.y + p.vy * dt);
+      if (p.life <= 0) this.confettiParts.splice(i, 1);
     }
     if (this.weather === "rain" || this.weather === "storm" || this.weather === "snow") {
       const snow = this.weather === "snow";
@@ -513,6 +536,10 @@ export class StudioScene {
     }
     ctx.globalCompositeOperation = "source-over";
 
+    for (const p of this.confettiParts) {
+      ctx.fillStyle = p.c;
+      ctx.fillRect(Math.round(p.x), Math.round(p.y), 2, Math.sin(p.life * 12) > 0 ? 2 : 1);
+    }
     for (const id of AGENT_ORDER) this.drawBubble(this.agents[id]);
   }
 

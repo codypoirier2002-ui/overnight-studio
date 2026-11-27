@@ -1,6 +1,7 @@
 import { AGENTS, type AgentId } from "../agents";
 import type { DesignDoc, DiaryEntry, Palette, PlaytestReport } from "../types";
 import { PALETTE_KEYS } from "../games/palettes";
+import { drawCover } from "./cover";
 import { h } from "./dom";
 
 const avatarCache: Partial<Record<AgentId, string>> = {};
@@ -112,6 +113,12 @@ function reportCard(r: PlaytestReport): HTMLElement {
   );
 }
 
+function coverCard(game: Parameters<typeof drawCover>[1]): HTMLElement {
+  const c = h("canvas", { class: "cover-art", width: 160, height: 120, role: "img", "aria-label": `Cover art for ${game.title}` });
+  drawCover(c, game);
+  return h("div", { class: "card cover-card" }, c);
+}
+
 function codeCard(note: string): HTMLElement {
   return h("div", { class: "card" }, h("p", { class: "muted" }, note));
 }
@@ -127,6 +134,7 @@ export function entryEl(e: DiaryEntry): HTMLElement {
   else if (e.kind === "palette" && e.data) extra = paletteCard(e.data as Palette);
   else if (e.kind === "report" && e.data) extra = reportCard(e.data as PlaytestReport);
   else if (e.kind === "code" && typeof e.data === "string") extra = codeCard(e.data);
+  else if (e.kind === "cover" && e.data) extra = coverCard(e.data as Parameters<typeof drawCover>[1]);
   const who = h("span", { class: "who" }, a.name);
   who.style.color = a.color;
   return h(

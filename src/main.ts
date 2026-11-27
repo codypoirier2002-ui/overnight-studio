@@ -1,12 +1,17 @@
 import "./style.css";
 import { StudioScene } from "./studio/scene";
 import { Director, loadJob } from "./studio/director";
-import type { GameMaker } from "./studio/director";
+import { StudioSound } from "./studio/sound";
+import { StudioLife } from "./studio/life";
 import { BuiltinBrain } from "./brain/brain";
 import { AiBrain, fetchStatus, type StudioStatus } from "./brain/aiBrain";
-import { PITCH_IDEAS } from "./brain/pitch";
+import { PITCH_IDEAS, parsePitch } from "./brain/pitch";
+import { rngFrom } from "./brain/writer";
 import { createMaker } from "./games/maker";
 import { remix } from "./games/remix";
+import { runPlaytest } from "./games/playtest";
+import { pickPalette } from "./games/palettes";
+import { buildGameHtml } from "./games/frame";
 import { Player } from "./ui/player";
 import { renderStages } from "./ui/stagesView";
 import { renderShelf } from "./ui/shelfView";
@@ -24,11 +29,11 @@ interface Settings {
 const settings: Settings = { speed: 1, sound: true, ...readJSON<Partial<Settings>>("settings", {}) };
 const saveSettings = () => writeJSON("settings", settings);
 
+const sound = new StudioSound();
+sound.setEnabled(settings.sound);
 const scene = new StudioScene($("#scene") as HTMLCanvasElement);
-scene.onAgentClick = (id) => showAgentCard(id);
 const diary = new DiaryView($("#diary"));
-
-const maker: GameMaker = createMaker();
+const maker = createMaker();
 const builtin = new BuiltinBrain(remix);
 let status: StudioStatus | null = null;
 const aiBrain = new AiBrain(builtin, (usage) => {
@@ -37,6 +42,12 @@ const aiBrain = new AiBrain(builtin, (usage) => {
     renderBadge();
   }
 });
+
+scene.onAgentClick = (id) => {
+  showAgentCard(id);
+  scene.say(id, "heart", 1600);
+  sound.play("blip-" + id);
+};
 
 function renderBadge(): void {
   const b = $("#mode-badge");
@@ -63,8 +74,11 @@ const director = new Director({
     if (!addGame(game)) toast("Couldn't save to the shelf: browser storage is full or blocked.");
   },
   onEnd: () => setBusy(false),
+  sfx: (name) => sound.play(name),
 });
 director.speed = settings.speed;
+
+const life = new StudioLife(scene, () => director.running, sound);
 
 const player = new Player({
   onDelete: (g) => {
@@ -84,9 +98,12 @@ function refreshShelf(): void {
   const games = getShelf();
   renderShelf(games, (id) => {
     const g = getGame(id);
-    if (g) player.open(g);
+    if (g) {
+      sound.play("click");
+      player.open(g);
+    }
   });
-  scene.shelf = games.map((g) => g.palette.hero);
+  scene.shelf = games.map((g) => g.palette.hero).reverse();
   scene.plant = 1 + getLore().gerald;
 }
 
@@ -94,10 +111,16 @@ function setBusy(busy: boolean): void {
   ($("#pitch-btn") as HTMLButtonElement).disabled = busy;
   ($("#pitch-input") as HTMLInputElement).disabled = busy;
   $("#skip-btn").hidden = !busy;
+  if (!busy) {
+    scene.weather = "clear";
+    refreshShelf();
+  }
 }
 
-function speedLabel(): string {
-  return `${settings.speed}x`;
+function renderSoundBtn(): void {
+  const b = $("#sound-btn");
+  b.textContent = settings.sound ? "Sound on" : "Sound off";
+  b.setAttribute("aria-pressed", String(settings.sound));
 }
 
 loadLore();
@@ -105,14 +128,24 @@ loadShelf();
 onShelfChange(refreshShelf);
 refreshShelf();
 renderStages(null, new Set());
+renderSoundBtn();
 scene.start();
+life.start();
 
-$("#speed-btn").textContent = speedLabel();
+$("#speed-btn").textContent = `${settings.speed}x`;
 $("#speed-btn").addEventListener("click", () => {
   settings.speed = settings.speed === 1 ? 2 : settings.speed === 2 ? 4 : 1;
   director.speed = settings.speed;
-  $("#speed-btn").textContent = speedLabel();
+  $("#speed-btn").textContent = `${settings.speed}x`;
   saveSettings();
+});
+$("#sound-btn").addEventListener("click", () => {
+  settings.sound = !settings.sound;
+  sound.setEnabled(settings.sound);
+  player.setMuted(!settings.sound);
+  renderSoundBtn();
+  saveSettings();
+  if (settings.sound) sound.play("pop");
 });
 $("#skip-btn").addEventListener("click", () => director.fastForward());
 $("#dice-btn").addEventListener("click", () => {
@@ -120,6 +153,7 @@ $("#dice-btn").addEventListener("click", () => {
   const options = PITCH_IDEAS.filter((p) => p !== input.value);
   input.value = options[Math.floor(Math.random() * options.length)];
   input.focus();
+  sound.play("click");
 });
 
 $("#pitch-form").addEventListener("submit", (e) => {
@@ -145,9 +179,4 @@ void fetchStatus().then((s) => {
 });
 
 // Small hook for the automated browser tests (tests/e2e).
-import { runPlaytest } from "./games/playtest";
-import { parsePitch } from "./brain/pitch";
-import { pickPalette } from "./games/palettes";
-import { rngFrom } from "./brain/writer";
-import { buildGameHtml } from "./games/frame";
-(window as unknown as Record<string, unknown>).__OGS_TEST__ = { runPlaytest, parsePitch, remix, pickPalette, rngFrom, buildGameHtml };
+(window as unknown as Record<string, unknown>).__OGS_TEST__ = { runPlaytest, parsePitch, remix, pickPalette, rngFrom, buildGameHtml, scene, life };

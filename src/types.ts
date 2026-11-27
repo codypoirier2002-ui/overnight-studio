@@ -42,7 +42,7 @@ export interface CoverSpec {
   motif: string; // background motif, e.g. "rain", "stars", "bubbles"
 }
 
-export type DiaryKind = "line" | "doc" | "palette" | "report" | "note" | "code";
+export type DiaryKind = "line" | "doc" | "palette" | "report" | "note" | "code" | "cover";
 
 export interface DiaryEntry {
   who: AgentId | "system";

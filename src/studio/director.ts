@@ -61,11 +61,11 @@ const STAGE_START: Record<StageId, number> = {
   design: 40,
   build: 75,
   art: 255,
-  playtest: 335,
-  fixes: 395,
-  ship: 495,
+  playtest: 345,
+  fixes: 410,
+  ship: 525,
 };
-const STAGE_END = 560;
+const STAGE_END = 590;
 
 export function clockLabel(minutes: number): string {
   const total = (21 * 60 + Math.round(minutes)) % (24 * 60);
@@ -167,6 +167,7 @@ export class Director {
     for (const line of lines) {
       if (line.who !== "system" && !this.skipping) {
         this.hooks.diary.showTyping(line.who);
+        if (line.who === "coder" && stage !== "kickoff" && stage !== "ship") this.hooks.sfx?.("type");
         this.hooks.scene.say(line.who, "talk", 1500);
         const len = line.text.length;
         await this.wait(Math.min(3400, 650 + len * 22) + (line.kind ? 600 : 0));
@@ -372,8 +373,10 @@ export class Director {
         j.tagline = tagline;
         const game = this.toShipped(j);
         bumpLore({ gamesShipped: 1, gerald: 1 }, title);
+        this.emit({ who: "artist", text: "The cartridge, fresh off the press:", kind: "cover", data: { id: game.id, title: game.title, palette: game.palette, cover: game.cover, templateId: game.templateId, kind: game.kind, source: game.source } }, stage);
         this.hooks.onShip(game);
         this.hooks.sfx?.("ship");
+        this.hooks.scene.confetti([game.palette.hero, game.palette.accent, game.palette.danger, game.palette.text, "#ffd56b"]);
         for (const id of AGENT_ORDER) this.hooks.scene.setActivity(id, "celebrate");
         await this.play(lines.slice(-2), stage);
         this.emit({ who: "system", text: `Shipped: ${title} · ${clockLabel(j.clock)}` }, stage);
